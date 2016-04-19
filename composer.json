@@ -1,0 +1,13 @@
+{
+    "name": "phangoapp/pdeployer",
+    "description": "A simple script for deploy basic phangoapp applications",
+    "license": "GPL",
+    "authors": [
+        {
+            "name": "Antonio de la Rosa",
+            "email": "webmaster@web-t-sys.com"
+        }
+    ],
+    "bin": ["bin/pdeployer"]
+}
+

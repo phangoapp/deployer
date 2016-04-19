@@ -1,0 +1,114 @@
+#!/usr/bin/php
+<?php
+
+$help="pdeployer -f folder_to_install [--composer_path path/to/composer --url_path /url/to/path/]\n";
+
+$arr_options=getopt('f:', ['composer_path:', 'url_path:']);
+
+#print_r($arr_options);
+
+if(!isset($arr_options['f']))
+{
+    echo $help;
+    
+    exit(0);
+}
+
+if(!isset($arr_options['composer_path']))
+{
+    
+    $arr_options['composer_path']='composer';
+    
+}
+
+if(!isset($arr_options['url_path']))
+{
+    
+    $arr_options['url_path']='/';
+    
+}
+
+/*
+echo 'Folder: ';
+
+$f = fopen( 'php://stdin', 'r' );
+
+$folder = fgets( $f );
+
+fclose( $f );*/
+
+echo "Cloning phangoapp repository...\n";
+
+exec_command('git clone https://github.com/phangoapp/phango.git '.$arr_options['f'], 'Sorry, i cannot create a new phangoapp. Check permissions of directory');
+
+echo "Creating initial composer.json..\n";
+
+exec_command('php '.$arr_options['f'].'/create_composer.php', 'Sorry, i cannot create a new composer.json file');
+
+echo "Downloading Phango dependencies...\n";
+
+exec_command('php /usr/local/bin/'.$arr_options['composer_path'].' install -d '.$arr_options['f'], 'Sorry, i cannot found composer');
+
+echo "Creating basic configuration...\n";
+
+$file_config=$arr_options['f'].'/settings/config.php';
+
+if(!copy($arr_options['f'].'/settings/config.php.sample', $file_config)) 
+{
+    echo "Error to copy the config.php file\n";
+    
+    exit(1);
+}
+
+$config=file_get_contents($file_config);
+
+if($arr_options['url_path']!='/')
+{
+    
+    $config=str_replace("Routes::\$root_url='/';", "Routes::\$root_url='${arr_options['url_path']}';", $config);
+    
+}
+if(!file_put_contents($file_config, $config))
+{
+    
+    echo "Error cannot modify the config file\n";
+    
+    exit(1);
+    
+}
+
+echo "Succesfull!!!!\n";
+
+function exec_command($command, $error_text)
+{
+    $descriptorspec = [
+   0 => array("pipe", "r")  // stdin es una tubería usada por el hijo para lectura
+   /*1 => array("pipe", "w"),  // stdout es una tubería usada por el hijo para escritura
+   2 => array("file", "/tmp/error-output.txt", "a") // stderr es un fichero para escritura*/
+    ];
+    
+    $process = proc_open($command, $descriptorspec, $pipes);
+
+    if(is_resource($process)) 
+    {
+        
+        while($text=fread($pipes[0], 4096))
+        {
+            
+            echo $text;
+            
+        }
+        
+    }
+    else
+    {
+        
+        echo $error_text."\n";
+        exit(1);
+        
+    }
+
+    proc_close($process);
+
+    
+}
