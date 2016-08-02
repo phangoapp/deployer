@@ -1,7 +1,7 @@
 #!/usr/bin/php
 <?php
 
-$help="pdeployer -f folder_to_install [--composer_path path/to/composer --url_path /url/to/path/]\n";
+$help="pdeployer -f folder_to_install [--composer_path path/to/composer --url_path gitmodule/module,https://gitserver.com/gitmodule2/module2|gitmodule2/module2]\n";
 
 $arr_options=getopt('f:', ['composer_path:', 'url_path:']);
 
@@ -28,6 +28,15 @@ if(!isset($arr_options['url_path']))
     
 }
 
+$arr_modules=[];
+
+if(isset($arr_options['modules']))
+{
+    
+    $arr_modules=explode(',', $arr_options['modules']);
+    
+}
+
 /*
 echo 'Folder: ';
 
@@ -47,7 +56,7 @@ exec_command('php '.$arr_options['f'].'/create_composer.php', 'Sorry, i cannot c
 
 echo "Downloading Phango dependencies...\n";
 
-exec_command('php /usr/local/bin/'.$arr_options['composer_path'].' install -d '.$arr_options['f'], 'Sorry, i cannot found composer');
+exec_command($arr_options['composer_path'].' install -d '.$arr_options['f'], 'Sorry, i cannot found composer');
 
 echo "Creating basic configuration...\n";
 
@@ -82,9 +91,7 @@ echo "Succesfull!!!!\n";
 function exec_command($command, $error_text)
 {
     $descriptorspec = [
-   0 => array("pipe", "r")  // stdin es una tubería usada por el hijo para lectura
-   /*1 => array("pipe", "w"),  // stdout es una tubería usada por el hijo para escritura
-   2 => array("file", "/tmp/error-output.txt", "a") // stderr es un fichero para escritura*/
+        0 => array("pipe", "r")  
     ];
     
     $process = proc_open($command, $descriptorspec, $pipes);
