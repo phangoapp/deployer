@@ -1,9 +1,9 @@
 #!/usr/bin/php
 <?php
 
-$help="pdeployer -f folder_to_install [--composer_path path/to/composer --url_path gitmodule/module,https://gitserver.com/gitmodule2/module2|gitmodule2/module2]\n";
+$help="pdeployer -f folder_to_install [--composer_path path/to/composer --url_path / --modules gitmodule/module,gitmodule2/module2|https://gitserver.com/gitmodule2/module2]\n";
 
-$arr_options=getopt('f:', ['composer_path:', 'url_path:']);
+$arr_options=getopt('f:', ['composer_path:', 'url_path:', 'modules:']);
 
 #print_r($arr_options);
 
@@ -37,22 +37,75 @@ if(isset($arr_options['modules']))
     
 }
 
-/*
-echo 'Folder: ';
-
-$f = fopen( 'php://stdin', 'r' );
-
-$folder = fgets( $f );
-
-fclose( $f );*/
-
 echo "Cloning phangoapp repository...\n";
 
 exec_command('git clone https://github.com/phangoapp/phango.git '.$arr_options['f'], 'Sorry, i cannot create a new phangoapp. Check permissions of directory');
 
+# Modules
+
+$c=0;
+
+$arr_require=[];
+
+$add_json_repo=[];
+$add_json=[];
+
+foreach($arr_modules as $module)
+{
+    
+    $module_cvs=explode('@', $module);
+    
+    $arr_module=explode('#', $module_cvs[0]);
+    
+    $version='@stable';
+    
+    if(isset($arr_module[1]))
+    {
+        $module_cvs[0]=$arr_module[0];
+        $version=$arr_module[1];
+        
+    }
+    
+    $add_json[$module_cvs[0]]=$version;
+    
+    if(isset($module_cvs[1]))
+    {
+        
+        //$arr_require[$c][1]=$module_cvs[1];
+        
+        $add_json_repo[]=["type"=> "vcs", "url"=> $module_cvs[1]];
+        $add_json[$module_cvs[0]]="dev-master";
+        
+    }
+    
+    $c++;
+    
+}
+
 echo "Creating initial composer.json..\n";
 
 exec_command('php '.$arr_options['f'].'/create_composer.php', 'Sorry, i cannot create a new composer.json file');
+
+//Add modules to composer.json
+
+if($c>0)
+{
+    
+    $json_code=json_decode(file_get_contents($arr_options['f'].'/composer.json'), true);
+    
+    $json_code['repositories']=array_merge($json_code['repositories'], $add_json_repo);
+    $json_code['require']=array_merge($json_code['require'], $add_json);
+    
+    $composer_content=json_encode($json_code, JSON_PRETTY_PRINT)."\n";
+
+    if(!file_put_contents($arr_options['f'].'/composer.json', $composer_content))
+    {
+
+        echo "Error: cannot create composer.json. Please, check directory permissions for it...\n";
+
+    }
+    
+}
 
 echo "Downloading Phango dependencies...\n";
 
