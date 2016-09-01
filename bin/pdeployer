@@ -191,6 +191,8 @@ if($line==='y')
     
     exec_command('vendor/bin/padmin --model vendor/phangoapp/admin/models/models_admin.php', "Error: cannot install the admin site, check data of database\n");
     
+    copy('settings/admin/config_admin.php.sample', 'settings/admin/config_admin.php');
+    
     chdir($olddir);
     
 }
