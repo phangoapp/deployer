@@ -124,18 +124,74 @@ if(!copy($arr_options['f'].'/settings/config.php.sample', $file_config))
 
 $config=file_get_contents($file_config);
 
-if($arr_options['url_path']!='/')
+if($arr_options['url_path']!='/') 
 {
     
     $config=str_replace("Routes::\$root_url='/';", "Routes::\$root_url='${arr_options['url_path']}';", $config);
     
 }
+
+// Question about database
+
+$line=readline('Do you want a MySQL database? (the db need exists before) y/n: ');
+
+settype($line, 'string');
+
+if($line==='y') 
+{
+    
+    $server=readline('Database server: ');
+    
+    if(trim($server)!='') 
+    {
+    
+        $config=str_replace("Webmodel::\$host_db['default']='localhost';", "Webmodel::\$host_db['default']='${server}';", $config);
+        
+    }
+    
+    $db=readline('Database name: ');
+    
+    $config=str_replace("Webmodel::\$db['default']='database_name';", "Webmodel::\$db['default']='${db}';", $config);
+
+    $user_db=readline('Username: ');
+    
+    $config=str_replace("Webmodel::\$login_db['default']='root';", "Webmodel::\$login_db['default']='${user_db}';", $config);
+    
+    $pass_db=readline('Password: ');
+    
+    $config=str_replace("Webmodel::\$pass_db['default']='';", "Webmodel::\$pass_db['default']='${pass_db}';", $config);
+    
+    
+}
+
+//Saving configuration
+
 if(!file_put_contents($file_config, $config))
 {
     
     echo "Error cannot modify the config file\n";
     
     exit(1);
+    
+}
+
+
+// Question about install admin
+
+$line=readline('Do you want install admin? y/n: ');
+
+settype($line, 'string');
+
+if($line==='y') 
+{
+    
+    $olddir=__DIR__;
+    
+    chdir($arr_options['f']);
+    
+    exec_command('vendor/bin/padmin --model vendor/phangoapp/admin/models/models_admin.php', "Error: cannot install the admin site, check data of database\n");
+    
+    chdir($olddir);
     
 }
 
