@@ -197,7 +197,7 @@ if($line==='y')
     
 }
 
-echo "Succesfull!!!!\n";
+echo "Phango installed sucessfully!!!!\n";
 
 function exec_command($command, $error_text)
 {
