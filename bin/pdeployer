@@ -1,7 +1,7 @@
 #!/usr/bin/php
 <?php
 
-$help="pdeployer -f folder_to_install [--composer_path path/to/composer --url_path / --modules gitmodule/module,gitmodule2/module2|https://gitserver.com/gitmodule2/module2]\n";
+$help="pdeployer -f folder_to_install [--composer_path path/to/composer --url_path / --modules gitmodule/module,gitmodule2/module2#https://gitserver.com/gitmodule2/module2^@stable]\n";
 
 $arr_options=getopt('f:', ['composer_path:', 'url_path:', 'modules:']);
 
@@ -49,13 +49,14 @@ $arr_require=[];
 
 $add_json_repo=[];
 $add_json=[];
+$arr_module_models=[];
 
 foreach($arr_modules as $module)
 {
     
-    $module_cvs=explode('@', $module);
+    $module_cvs=explode('#', $module);
     
-    $arr_module=explode('#', $module_cvs[0]);
+    $arr_module=explode('^', $module_cvs[0]);
     
     $version='@stable';
     
@@ -65,6 +66,8 @@ foreach($arr_modules as $module)
         $version=$arr_module[1];
         
     }
+    
+    $arr_module_models[]=$module_cvs[0];
     
     $add_json[$module_cvs[0]]=$version;
     
@@ -137,6 +140,8 @@ $line=readline('Do you want a MySQL database? (the db need exists before) y/n: '
 
 settype($line, 'string');
 
+$yes_models=0;
+
 if($line==='y') 
 {
     
@@ -161,6 +166,7 @@ if($line==='y')
     
     $config=str_replace("Webmodel::\$pass_db['default']='';", "Webmodel::\$pass_db['default']='${pass_db}';", $config);
     
+    $yes_models=1;
     
 }
 
@@ -177,13 +183,13 @@ if(!file_put_contents($file_config, $config))
 
 
 // Question about install admin
-
+/*
 $line=readline('Do you want install admin? y/n: ');
 
 settype($line, 'string');
 
 if($line==='y') 
-{
+{*/
     
     $olddir=__DIR__;
     
@@ -192,6 +198,38 @@ if($line==='y')
     exec_command('vendor/bin/padmin --model vendor/phangoapp/admin/models/models_admin.php', "Error: cannot install the admin site, check data of database\n");
     
     copy('settings/admin/config_admin.php.sample', 'settings/admin/config_admin.php');
+    
+    chdir($olddir);
+    
+//}
+
+if($yes_models==1)
+{
+    
+    $olddir=__DIR__;
+    
+    chdir($arr_options['f']);
+    
+    foreach($arr_module_models as $model_path)
+    {
+        
+        $model_path='vendor/'.$model_path.'/models';
+        
+        $arr_models=scandir($model_path);
+        
+        foreach($arr_models as $model_file)
+        {
+            
+            if(preg_match("/^.*?\.php$/", $model_file))
+            {
+            
+                exec_command('vendor/bin/padmin --model '.$model_path.'/'.$model_file, 'Error: cannot install the model '.$model_path.'/'.$model_file);
+                
+            }
+            
+        }
+        
+    }
     
     chdir($olddir);
     
