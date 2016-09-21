@@ -3,7 +3,7 @@
 
 $help="pdeployer -f folder_to_install [--composer_path path/to/composer --url_path / --modules gitmodule/module,gitmodule2/module2#https://gitserver.com/gitmodule2/module2^@stable]\n";
 
-$arr_options=getopt('f:', ['composer_path:', 'url_path:', 'modules:']);
+$arr_options=getopt('f:', ['composer_path:', 'php_path:', 'url_path:', 'modules:']);
 
 #print_r($arr_options);
 
@@ -25,6 +25,15 @@ if(!isset($arr_options['url_path']))
 {
     
     $arr_options['url_path']='/';
+    
+}
+
+$php_path='/usr/bin/php';
+
+if(isset($arr_options['php_path']))
+{
+    
+    $php_path=$arr_options['php_path'];
     
 }
 
@@ -212,6 +221,7 @@ if($yes_models==1)
     
     foreach($arr_module_models as $model_path)
     {
+        $module_path=$model_path;
         
         $model_path='vendor/'.$model_path.'/models';
         
@@ -226,6 +236,16 @@ if($yes_models==1)
                 exec_command('vendor/bin/padmin --model '.$model_path.'/'.$model_file, 'Error: cannot install the model '.$model_path.'/'.$model_file);
                 
             }
+            
+        }
+        
+        //Execute install scripts
+        $install_path='vendor/'.$module_path.'/console/controller_install.php';
+        
+        if(is_file($install_path))
+        {
+            
+            exec_command($php_path.' console.php -m='.$module_path.' -c=install', 'Error: cannot install the model '.$model_path.'/'.$model_file);
             
         }
         
