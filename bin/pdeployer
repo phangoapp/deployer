@@ -143,6 +143,17 @@ if($arr_options['url_path']!='/')
     
 }
 
+//Add new modules
+
+if(count($arr_module_models)>0)
+{
+
+    echo "Adding modules to config...\n";
+
+    $config=str_replace("Routes::\$apps=['phangoapp/welcome', 'phangoapp/lang', 'phangoapp/showmedia', 'phangoapp/admin'];", "Routes::\$apps=['phangoapp/welcome', 'phangoapp/lang', 'phangoapp/showmedia', 'phangoapp/admin', '".implode("', '", $arr_module_models)."'];", $config);
+
+}
+
 // Question about database
 
 $line=readline('Do you want a MySQL database? (the db need exists before) y/n: ');
@@ -240,12 +251,54 @@ if($yes_models==1)
         }
         
         //Execute install scripts
-        $install_path='vendor/'.$module_path.'/console/controller_install.php';
+        $install_path='vendor/'.$module_path.'/install/install.php';
         
         if(is_file($install_path))
         {
             
-            exec_command($php_path.' console.php -m='.$module_path.' -c=install', 'Error: cannot install the model '.$model_path.'/'.$model_file);
+            //exec_command($php_path.' console.php -m='.$module_path.' -c=install', 'Error: cannot install the model '.$model_path.'/'.$model_file);
+            //system($php_path.' console.php -m='.$module_path.' -c=install');
+            $pid = pcntl_fork();
+            
+            if ($pid == -1) 
+            {
+                 echo "Error: cannot fork for install script of ".$module_path."\n";
+            } 
+            else 
+            if ($pid) 
+            {
+                 // we are the parent
+                pcntl_wait($status); //Protect against Zombie children
+                 
+            } 
+            else 
+            {
+                
+                include("vendor/autoload.php");
+
+                PhangoApp\PhaUtils\Utils::load_config('config_routes');
+                PhangoApp\PhaUtils\Utils::load_config('config_i18n');
+                PhangoApp\PhaUtils\Utils::load_config('config');
+                PhangoApp\PhaUtils\Utils::load_config('config_views');
+
+                PhangoApp\PhaRouter\Routes::$base_path=getcwd();
+
+                /**Load configurations from modules**/
+
+                foreach(PhangoApp\PhaRouter\Routes::$apps as $admin_module)
+                {
+                    
+                    PhangoApp\PhaUtils\Utils::load_config('config', $path='vendor/'.$admin_module."/settings");
+                    
+                }
+                
+                
+                include($install_path); 
+                
+                exit(0);
+                
+            }
+
             
         }
         
