@@ -211,7 +211,7 @@ settype($line, 'string');
 if($line==='y') 
 {*/
     
-    $olddir=__DIR__;
+    $olddir=getcwd();
     
     chdir($arr_options['f']);
     
@@ -226,7 +226,7 @@ if($line==='y')
 if($yes_models==1)
 {
     
-    $olddir=__DIR__;
+    $olddir=getcwd();
     
     chdir($arr_options['f']);
     
